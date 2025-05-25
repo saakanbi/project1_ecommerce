@@ -1,0 +1,49 @@
+---
+- name: Update system packages using shell (Amazon Linux 2)
+  shell: yum update -y
+
+- name: Add Amazon Corretto 11 repository manually
+  get_url:
+    url: https://yum.corretto.aws/corretto.repo
+    dest: /etc/yum.repos.d/corretto.repo
+
+- name: Install Java 11 using shell
+  shell: yum install -y java-11-amazon-corretto
+  args:
+    creates: /usr/bin/java
+
+- name: Add Jenkins repo
+  get_url:
+    url: https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    dest: /etc/yum.repos.d/jenkins.repo
+
+- name: Import Jenkins GPG key
+  rpm_key:
+    key: https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    state: present
+
+- name: Install Jenkins
+  shell: yum install -y jenkins
+  args:
+    creates: /usr/bin/jenkins
+
+- name: Start and enable Jenkins
+  systemd:
+    name: jenkins
+    enabled: true
+    state: started
+
+- name: Wait for Jenkins to be available
+  wait_for:
+    port: 8080
+    delay: 10
+    timeout: 300
+
+- name: Get initial admin password
+  command: cat /var/lib/jenkins/secrets/initialAdminPassword
+  register: jenkins_admin_password
+  changed_when: false
+
+- name: Show Jenkins initial admin password
+  debug:
+    msg: "Jenkins initial admin password: {{ jenkins_admin_password.stdout }}"

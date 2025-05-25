@@ -1,0 +1,33 @@
+---
+- name: Install Java 17 using yum
+  yum:
+    name: java-17-amazon-corretto
+    state: present
+
+- name: Copy Spring Boot JAR
+  copy:
+    src: ../files/ecommerce-1.0.0.jar
+    dest: /home/ec2-user/ecommerce.jar
+    mode: '0755'
+
+- name: Create systemd service for Spring Boot
+  copy:
+    dest: /etc/systemd/system/ecommerce.service
+    content: |
+      [Unit]
+      Description=Spring Boot App
+      After=network.target
+
+      [Service]
+      User=ec2-user
+      ExecStart=/usr/bin/java -jar /home/ec2-user/ecommerce.jar
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Enable and start ecommerce app
+  systemd:
+    name: ecommerce
+    enabled: true
+    state: started
