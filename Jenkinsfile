@@ -34,21 +34,13 @@ pipeline {
 
     stage('Build App') {
       steps {
-        sh '''
-          export JAVA_HOME=/usr/lib/jvm/amazon-corretto-21
-          export PATH=$JAVA_HOME/bin:$PATH
-          mvn clean package
-        '''
+        sh 'mvn clean package'
       }
     }
 
     stage('Run Tests') {
       steps {
-        sh '''
-          export JAVA_HOME=/usr/lib/jvm/amazon-corretto-21
-          export PATH=$JAVA_HOME/bin:$PATH
-          mvn test
-        '''
+        sh 'mvn test'
       }
     }
 
