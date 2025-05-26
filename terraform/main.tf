@@ -105,18 +105,30 @@ resource "aws_security_group" "devops_sg" {
 }
 
 resource "aws_instance" "jenkins_server" {
-  ami                         = var.ami_id
-  instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.public_subnet_1.id
+  ami           = "ami-0c02fb55956c7d316"
+  instance_type = "t2.micro"
+  key_name      = "sunday"
+  subnet_id     = aws_subnet.public_subnet_1.id
   associate_public_ip_address = true
-  key_name                    = var.key_name
-  vpc_security_group_ids = [aws_security_group.devops_sg.id]
-
-
+  security_groups = [aws_security_group.devops_sg.name]
   tags = {
     Name = "jenkins-server"
   }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo yum update -y
+              sudo yum groupinstall -y "Development Tools"
+              sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel wget make
+              cd /usr/src
+              sudo wget https://www.python.org/ftp/python/3.8.18/Python-3.8.18.tgz
+              sudo tar xzf Python-3.8.18.tgz
+              cd Python-3.8.18
+              sudo ./configure --enable-optimizations
+              sudo make altinstall
+              EOF
 }
+
 
 resource "aws_instance" "app_server" {
   ami                         = var.ami_id

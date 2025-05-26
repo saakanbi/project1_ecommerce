@@ -1,12 +1,12 @@
 ---
 - name: Configure Jenkins server
   hosts: jenkins_server
-  become: yes
+  become: true
   roles:
     - jenkins
 
 - name: Configure Spring Boot App server
   hosts: app_server
-  become: yes
+  become: true
   roles:
     - springboot
