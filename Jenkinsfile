@@ -54,6 +54,8 @@ environment {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
           sh "docker tag ${IMAGE_NAME} $DOCKER_USER/ecommerce-backend"
+          sh 'echo "✅ Docker image built: ${IMAGE_NAME}"'
+          sh 'echo "🔐 Logging in to DockerHub..."'
           sh "docker push $DOCKER_USER/ecommerce-backend"
           sh 'docker logout'
         }
