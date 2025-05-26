@@ -32,17 +32,28 @@ pipeline {
       }
     }
 
-    stage('Build App') {
-      steps {
-        sh 'mvn clean package'
-      }
+stage('Build App') {
+  steps {
+    withEnv([
+      "JAVA_HOME=/usr/lib/jvm/amazon-corretto-21",
+      "PATH=${env.JAVA_HOME}/bin:${tool 'Maven 3'}/bin:${env.PATH}"
+    ]) {
+      sh 'mvn clean package'
     }
+  }
+}
 
-    stage('Run Tests') {
-      steps {
-        sh 'mvn test'
-      }
+stage('Run Tests') {
+  steps {
+    withEnv([
+      "JAVA_HOME=/usr/lib/jvm/amazon-corretto-21",
+      "PATH=${env.JAVA_HOME}/bin:${tool 'Maven 3'}/bin:${env.PATH}"
+    ]) {
+      sh 'mvn test'
     }
+  }
+}
+
 
     stage('Build Docker Image') {
       steps {
