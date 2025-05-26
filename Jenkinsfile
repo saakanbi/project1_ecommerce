@@ -1,11 +1,13 @@
 pipeline {
   agent { label 'agent1' }
 
-  environment {
-    IMAGE_NAME = "ceeyit/ecommerce-backend"
-    JAVA_HOME = "/usr/lib/jvm/java-21-amazon-corretto"
-    PATH = "${JAVA_HOME}/bin:${env.PATH}"
-  }
+environment {
+  IMAGE_NAME = "ceeyit/ecommerce-backend"
+  JAVA_HOME = "/usr/lib/jvm/java-21-amazon-corretto"
+  MAVEN_HOME = "/opt/apache-maven-3.9.6"
+  PATH = "${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${env.PATH}"
+}
+
 
   stages {
     stage('Verify Agent') {
