@@ -2,14 +2,13 @@ pipeline {
   agent { label 'agent1' }
 
   environment {
-  IMAGE_NAME = "ceeyit/ecommerce-backend"
-  JAVA_HOME = "/usr/lib/jvm/amazon-corretto-21"
-  PATH = "${JAVA_HOME}/bin:${env.PATH}"
-}
-
+    IMAGE_NAME = "ceeyit/ecommerce-backend"
+    JAVA_HOME = "/usr/lib/jvm/amazon-corretto-21"
+    PATH = "${JAVA_HOME}/bin:${env.PATH}"
+  }
 
   tools {
-    maven 'Maven 3' // Matches Global Tool Config
+    maven 'Maven 3'
   }
 
   stages {
@@ -35,7 +34,17 @@ pipeline {
 
     stage('Build App') {
       steps {
-        sh 'mvn clean package'
+        withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH=${env.JAVA_HOME}/bin:${env.PATH}"]) {
+          sh 'mvn clean package'
+        }
+      }
+    }
+
+    stage('Run Tests') {
+      steps {
+        withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH=${env.JAVA_HOME}/bin:${env.PATH}"]) {
+          sh 'mvn test'
+        }
       }
     }
 
@@ -53,6 +62,7 @@ pipeline {
           sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
           sh "docker tag ${IMAGE_NAME} $DOCKER_USER/ecommerce-backend"
           sh "docker push $DOCKER_USER/ecommerce-backend"
+          sh 'docker logout'
         }
       }
     }
@@ -67,4 +77,4 @@ pipeline {
     }
   }
 }
-// This Jenkinsfile defines a pipeline for building and pushing a Docker image for an e-commerce backend application.
+// This Jenkinsfile defines a pipeline for building and deploying a Java-based e-commerce backend application.
