@@ -34,17 +34,21 @@ pipeline {
 
     stage('Build App') {
       steps {
-        withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH=${env.JAVA_HOME}/bin:${env.PATH}"]) {
-          sh 'mvn clean package'
-        }
+        sh '''
+          export JAVA_HOME=/usr/lib/jvm/amazon-corretto-21
+          export PATH=$JAVA_HOME/bin:$PATH
+          mvn clean package
+        '''
       }
     }
 
     stage('Run Tests') {
       steps {
-        withEnv(["JAVA_HOME=${env.JAVA_HOME}", "PATH=${env.JAVA_HOME}/bin:${env.PATH}"]) {
-          sh 'mvn test'
-        }
+        sh '''
+          export JAVA_HOME=/usr/lib/jvm/amazon-corretto-21
+          export PATH=$JAVA_HOME/bin:$PATH
+          mvn test
+        '''
       }
     }
 
