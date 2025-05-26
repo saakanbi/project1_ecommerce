@@ -2,8 +2,11 @@ pipeline {
   agent { label 'agent1' }
 
   environment {
-    IMAGE_NAME = "ceeyit/ecommerce-backend"
-  }
+  IMAGE_NAME = "ceeyit/ecommerce-backend"
+  JAVA_HOME = "/usr/lib/jvm/amazon-corretto-21"
+  PATH = "${JAVA_HOME}/bin:${env.PATH}"
+}
+
 
   tools {
     maven 'Maven 3' // Matches Global Tool Config
