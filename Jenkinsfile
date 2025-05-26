@@ -3,12 +3,8 @@ pipeline {
 
   environment {
     IMAGE_NAME = "ceeyit/ecommerce-backend"
-    JAVA_HOME = "/usr/lib/jvm/amazon-corretto-21"
+    JAVA_HOME = "/usr/lib/jvm/java-21-amazon-corretto"
     PATH = "${JAVA_HOME}/bin:${env.PATH}"
-  }
-
-  tools {
-    maven 'Maven 3'
   }
 
   stages {
@@ -16,6 +12,7 @@ pipeline {
       steps {
         sh 'hostname'
         sh 'java -version'
+        sh 'mvn -version'
         sh 'docker --version'
       }
     }
@@ -32,34 +29,21 @@ pipeline {
       }
     }
 
-stage('Build App') {
-  steps {
-    withEnv([
-      "JAVA_HOME=/usr/lib/jvm/amazon-corretto-21",
-      "PATH=${env.JAVA_HOME}/bin:${tool 'Maven 3'}/bin:${env.PATH}"
-    ]) {
-      sh 'mvn clean package'
+    stage('Build App') {
+      steps {
+        sh 'mvn clean package'
+      }
     }
-  }
-}
 
-stage('Run Tests') {
-  steps {
-    withEnv([
-      "JAVA_HOME=/usr/lib/jvm/amazon-corretto-21",
-      "PATH=${env.JAVA_HOME}/bin:${tool 'Maven 3'}/bin:${env.PATH}"
-    ]) {
-      sh 'mvn test'
+    stage('Run Tests') {
+      steps {
+        sh 'mvn test'
+      }
     }
-  }
-}
-
 
     stage('Build Docker Image') {
       steps {
-        script {
-          sh "docker build -t ${IMAGE_NAME} ."
-        }
+        sh "docker build -t ${IMAGE_NAME} ."
       }
     }
 
