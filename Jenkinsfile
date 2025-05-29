@@ -51,42 +51,32 @@ pipeline {
                 writeFile file: 'deploy.sh', text: '''#!/bin/bash
 set -e
 
-# Update kubeconfig
-aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+# Use public endpoint for EKS
+aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME --alias $CLUSTER_NAME
+
+# Skip TLS verification for problematic networks
+kubectl config set-cluster $CLUSTER_NAME --insecure-skip-tls-verify=true
 
 # Update deployment image
 cat k8s/deployment.yaml | envsubst > k8s/deployment_updated.yaml
 mv k8s/deployment_updated.yaml k8s/deployment.yaml
 
-# Try direct connection without proxy
-echo "Testing connection to Kubernetes API server..."
-kubectl get namespaces --request-timeout=180s || {
-    echo "Direct connection failed, trying with AWS VPC endpoints..."
-    # Apply manifests with retry logic
-    for i in {1..3}; do
-        if kubectl apply -f k8s/monitoring-namespace.yaml --validate=false; then
-            break
-        fi
-        echo "Attempt $i failed, retrying in 10 seconds..."
-        sleep 10
-    done
-}
+# Apply manifests with local files only
+echo "Creating monitoring namespace..."
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
-# Create monitoring namespace if it doesn't exist
-kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - || true
-
-# Apply core resources with retry logic
-for manifest in deployment service ingress; do
-    kubectl apply -f k8s/$manifest.yaml --validate=false
-done
+# Apply core resources
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
 
 # Apply monitoring resources
-for manifest in configmap prometheus-config prometheus-deployment grafana-deployment grafana-ingress prometheus-ingress; do
-    kubectl apply -f k8s/$manifest.yaml -n monitoring --validate=false || true
-done
-
-# Wait for deployment to complete
-kubectl rollout status deployment/ecommerce-backend --timeout=180s || true
+kubectl apply -f k8s/configmap.yaml -n monitoring
+kubectl apply -f k8s/prometheus-config.yaml -n monitoring
+kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring
+kubectl apply -f k8s/grafana-deployment.yaml -n monitoring
+kubectl apply -f k8s/grafana-ingress.yaml -n monitoring
+kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring
 '''
                 
                 sh 'chmod +x deploy.sh'
