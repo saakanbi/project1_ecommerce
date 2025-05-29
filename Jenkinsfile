@@ -46,26 +46,41 @@ pipeline {
             steps {
                 script {
                     sh """
+                        # Configure kubectl with increased timeout
                         aws eks update-kubeconfig --region ${AWS_REGION} --name ecommerce-eks-cluster
+                        
+                        # Test connection to EKS cluster with increased timeout
+                        kubectl config use-context arn:aws:eks:${AWS_REGION}:${AWS_ACCOUNT_ID}:cluster/ecommerce-eks-cluster
+                        kubectl config set-cluster \$(kubectl config current-context) --server=\$(kubectl config view -o jsonpath='{.clusters[?(@.name == "'"\$(kubectl config current-context)"'")].cluster.server}') --request-timeout=60s
+                        
+                        # Verify connectivity before proceeding
+                        echo "Testing connection to Kubernetes API server..."
+                        kubectl get namespaces --request-timeout=60s
                         
                         # Update deployment image
                         cat k8s/deployment.yaml | envsubst > k8s/deployment_updated.yaml
                         mv k8s/deployment_updated.yaml k8s/deployment.yaml
                         
-                        # Apply Kubernetes manifests
-                        kubectl apply -f k8s/monitoring-namespace.yaml --validate=false
-                        kubectl apply -f k8s/deployment.yaml --validate=false
-                        kubectl apply -f k8s/service.yaml --validate=false
-                        kubectl apply -f k8s/ingress.yaml --validate=false
-                        kubectl apply -f k8s/configmap.yaml -n monitoring --validate=false
-                        kubectl apply -f k8s/prometheus-config.yaml -n monitoring --validate=false
-                        kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring --validate=false
-                        kubectl apply -f k8s/grafana-deployment.yaml -n monitoring --validate=false
-                        kubectl apply -f k8s/grafana-ingress.yaml -n monitoring --validate=false
-                        kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring --validate=false
+                        # Apply Kubernetes manifests with increased timeout
+                        kubectl apply -f k8s/monitoring-namespace.yaml --validate=false --request-timeout=60s || true
+                        sleep 5
+                        kubectl apply -f k8s/deployment.yaml --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/service.yaml --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/ingress.yaml --validate=false --request-timeout=60s
                         
-                        # Wait for deployment to complete
-                        kubectl rollout status deployment/ecommerce-backend
+                        # Create monitoring namespace if it doesn't exist
+                        kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - --request-timeout=60s
+                        
+                        # Apply monitoring resources with increased timeout
+                        kubectl apply -f k8s/configmap.yaml -n monitoring --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/prometheus-config.yaml -n monitoring --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/grafana-deployment.yaml -n monitoring --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/grafana-ingress.yaml -n monitoring --validate=false --request-timeout=60s
+                        kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring --validate=false --request-timeout=60s
+                        
+                        # Wait for deployment to complete with increased timeout
+                        kubectl rollout status deployment/ecommerce-backend --request-timeout=60s
                     """
                 }
             }
