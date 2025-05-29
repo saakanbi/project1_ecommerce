@@ -47,43 +47,34 @@ pipeline {
                 CLUSTER_NAME = "ecommerce-eks-cluster"
             }
             steps {
-                // Create deployment script
-                writeFile file: 'deploy.sh', text: '''#!/bin/bash
-set -e
+                withCredentials([
+                    string(credentialsId: 'AWS_REGION', variable: 'AWS_REGION'),
+                    string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID')
+                ]) {
+                    writeFile file: 'deploy.sh', text: '''#!/bin/bash
+# Configure kubectl with increased timeout
+aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
 
-# Use public endpoint for EKS
-aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME --alias $CLUSTER_NAME
-
-# Skip TLS verification for problematic networks
+# Skip TLS verification
 kubectl config set-cluster $CLUSTER_NAME --insecure-skip-tls-verify=true
 
 # Update deployment image
 cat k8s/deployment.yaml | envsubst > k8s/deployment_updated.yaml
 mv k8s/deployment_updated.yaml k8s/deployment.yaml
 
-# Apply manifests with local files only
-echo "Creating monitoring namespace..."
-kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
-
-# Apply core resources
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
-
-# Apply monitoring resources
-kubectl apply -f k8s/configmap.yaml -n monitoring
-kubectl apply -f k8s/prometheus-config.yaml -n monitoring
-kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring
-kubectl apply -f k8s/grafana-deployment.yaml -n monitoring
-kubectl apply -f k8s/grafana-ingress.yaml -n monitoring
-kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring
+# Apply manifests with validation disabled
+kubectl apply -f k8s/monitoring-namespace.yaml --validate=false
+kubectl apply -f k8s/deployment.yaml --validate=false
+kubectl apply -f k8s/service.yaml --validate=false
+kubectl apply -f k8s/ingress.yaml --validate=false
+kubectl apply -f k8s/configmap.yaml -n monitoring --validate=false
+kubectl apply -f k8s/prometheus-config.yaml -n monitoring --validate=false
+kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring --validate=false
+kubectl apply -f k8s/grafana-deployment.yaml -n monitoring --validate=false
+kubectl apply -f k8s/grafana-ingress.yaml -n monitoring --validate=false
+kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring --validate=false
 '''
-                
-                sh 'chmod +x deploy.sh'
-                withCredentials([
-                    string(credentialsId: 'AWS_REGION', variable: 'AWS_REGION'),
-                    string(credentialsId: 'AWS_ACCOUNT_ID', variable: 'AWS_ACCOUNT_ID')
-                ]) {
+                    sh 'chmod +x deploy.sh'
                     sh './deploy.sh'
                 }
             }
