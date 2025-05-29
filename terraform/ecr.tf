@@ -1,6 +1,7 @@
 resource "aws_ecr_repository" "ecommerce_backend" {
   name                 = "ecommerce-backend"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -9,6 +10,11 @@ resource "aws_ecr_repository" "ecommerce_backend" {
   tags = {
     Name        = "ecommerce-backend"
     Environment = "dev"
+  }
+  
+  # This prevents Terraform from recreating the repository if it already exists
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
