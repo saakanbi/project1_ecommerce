@@ -8,4 +8,8 @@ public class Main {
     public static void main(String[] args) {
         SpringApplication.run(Main.class, args);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 943ee0b81e73be5ba97817c57c11e5f82a79519b
