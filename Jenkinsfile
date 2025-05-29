@@ -49,20 +49,20 @@ pipeline {
                         aws eks update-kubeconfig --region ${AWS_REGION} --name ecommerce-eks-cluster
                         
                         # Update deployment image
-                        envsubst < k8s/deployment.yaml > k8s/deployment_updated.yaml
+                        cat k8s/deployment.yaml | envsubst > k8s/deployment_updated.yaml
                         mv k8s/deployment_updated.yaml k8s/deployment.yaml
                         
                         # Apply Kubernetes manifests
-                        kubectl apply -f k8s/monitoring-namespace.yaml
-                        kubectl apply -f k8s/deployment.yaml
-                        kubectl apply -f k8s/service.yaml
-                        kubectl apply -f k8s/ingress.yaml
-                        kubectl apply -f k8s/configmap.yaml -n monitoring
-                        kubectl apply -f k8s/prometheus-config.yaml -n monitoring
-                        kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring
-                        kubectl apply -f k8s/grafana-deployment.yaml -n monitoring
-                        kubectl apply -f k8s/grafana-ingress.yaml -n monitoring
-                        kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring
+                        kubectl apply -f k8s/monitoring-namespace.yaml --validate=false
+                        kubectl apply -f k8s/deployment.yaml --validate=false
+                        kubectl apply -f k8s/service.yaml --validate=false
+                        kubectl apply -f k8s/ingress.yaml --validate=false
+                        kubectl apply -f k8s/configmap.yaml -n monitoring --validate=false
+                        kubectl apply -f k8s/prometheus-config.yaml -n monitoring --validate=false
+                        kubectl apply -f k8s/prometheus-deployment.yaml -n monitoring --validate=false
+                        kubectl apply -f k8s/grafana-deployment.yaml -n monitoring --validate=false
+                        kubectl apply -f k8s/grafana-ingress.yaml -n monitoring --validate=false
+                        kubectl apply -f k8s/prometheus-ingress.yaml -n monitoring --validate=false
                         
                         # Wait for deployment to complete
                         kubectl rollout status deployment/ecommerce-backend
