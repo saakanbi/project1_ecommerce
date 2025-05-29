@@ -49,8 +49,8 @@ pipeline {
                         aws eks update-kubeconfig --region ${AWS_REGION} --name ecommerce-eks-cluster
                         
                         # Update deployment image
-                        sed -i 's|\$\{AWS_ACCOUNT_ID\}|${AWS_ACCOUNT_ID}|g' k8s/deployment.yaml
-                        sed -i 's|\$\{AWS_REGION\}|${AWS_REGION}|g' k8s/deployment.yaml
+                        sed -i 's|\\${AWS_ACCOUNT_ID}|'${AWS_ACCOUNT_ID}'|g' k8s/deployment.yaml
+                        sed -i 's|\\${AWS_REGION}|'${AWS_REGION}'|g' k8s/deployment.yaml
                         
                         # Apply Kubernetes manifests
                         kubectl apply -f k8s/monitoring-namespace.yaml
